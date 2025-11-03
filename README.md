@@ -22,10 +22,3 @@ About the Dataset:
 =>Each image is a close-up of a single leaf in .jpg format.
 =>Suitable for CNN-based image classification and transfer learning tasks.
 
-# Week 1 Activities
-1. Selected the project theme: Sustainability.
-2. Defined the problem statement and objectives.
-3. Researched possible deep learning models (decided on MobileNetV2).
-4. Identified and downloaded the PlantVillage dataset.
-5. Analyzed dataset structure and sample images.
-6. Created the GitHub repository and documentation files.
