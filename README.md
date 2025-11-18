@@ -23,19 +23,18 @@ About the Dataset:
 3. Each image is a close-up of a single leaf in .jpg format.
 4. Suitable for CNN-based image classification and transfer learning tasks.
 
-LIVE DEMO :
+**LIVE DEMO **
 Click here to try the app instantly: [PASTE YOUR STREAMLIT APP LINK HERE]
 (Note: If you run the app locally, you will need to provide your own Gemini API Key. The live demo has this configured.)
 
-Key Features:
+**Key Features**:
 1. Accurate Detection: Uses a MobileNetV2 CNN model trained on the PlantVillage dataset (54,000+ images).
 2. 15 Disease Classes: Can identify diseases in Potato, Tomato, and Pepper plants.
 3. Expert Advice: Integrated with Google Gemini AI to provide detailed, step-by-step treatment plans (Organic & Chemical).
 4. User-Friendly Interface: A simple, responsive web app built with Streamlit.
 
-Technical Details :
-Model Architecture: MobileNetV2 (Transfer Learning) + Fine-Tuning.
-Training Accuracy: ~89% - 92%.
-Dataset: PlantVillage Dataset (link: )
-Tech Stack: TensorFlow/Keras, Streamlit, Google Gemini API, Python.
+**Technical Details**: 
+=> Model Architecture: MobileNetV2 (Transfer Learning) + Fine-Tuning.
+=> Training Accuracy: ~89% - 92%.
+=> Tech Stack: TensorFlow/Keras, Streamlit, Google Gemini API, Python.
 
