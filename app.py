@@ -5,6 +5,8 @@ from PIL import Image, ImageOps
 import numpy as np
 import google.generativeai as genai
 
+# CRITICAL FIX 1: Set environment variable for Keras compatibility
+# This helps load models trained in older versions of Keras/TensorFlow.
 os.environ["TF_USE_LEGACY_KERAS"] = "1" 
 
 # ---------------------------------------------------------
@@ -14,8 +16,9 @@ st.set_page_config(page_title="Plant Disease Advisor", page_icon="🌱", layout=
 st.title("🌱 AI-Based Plant Disease Advisor")
 st.write("Upload a plant leaf image to detect disease and get treatment suggestions.")
 
-
+# ---------------------------------------------------------
 # SECURE API KEY HANDLING
+# ---------------------------------------------------------
 API_KEY = None
 
 try:
@@ -37,8 +40,9 @@ if API_KEY:
         st.error(f"Invalid API Key: {e}")
         API_KEY = None
 
-
+# ---------------------------------------------------------
 # CLASS NAMES (Required for model definition)
+# ---------------------------------------------------------
 CLASS_NAMES = [
     'Pepper__bell___Bacterial_spot', 'Pepper__bell___healthy', 'Potato___Early_blight', 
     'Potato___Late_blight', 'Potato___healthy', 'Tomato_Bacterial_spot', 'Tomato_Early_blight', 
@@ -47,9 +51,9 @@ CLASS_NAMES = [
     'Tomato__Tomato_YellowLeaf__Curl_Virus', 'Tomato__Tomato_mosaic_virus', 'Tomato_healthy'
 ]
 
-
+# ---------------------------------------------------------
 # LOAD GEMINI MODEL
-
+# ---------------------------------------------------------
 @st.cache_resource
 def load_genai_model():
     if API_KEY:
@@ -62,19 +66,22 @@ def load_genai_model():
 
 genai_model = load_genai_model()
 
-# LOAD KERAS DETECTION MODEL
+# ---------------------------------------------------------
+# LOAD KERAS DETECTION MODEL (Architecture Rebuild Fix)
+# ---------------------------------------------------------
 MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
 
 @st.cache_resource
 def load_detection_model(path):
     try:
-        # 1. Base Model Definition (MobileNetV2, weights=None to load from file)
+        # CRITICAL FIX 3: Rebuild the exact model architecture and load weights only
         base_model = tf.keras.applications.MobileNetV2(
             weights=None, 
             include_top=False, 
             input_shape=(224, 224, 3)
         )
-        # 2. Reconstruct the Sequential Model Head exactly as trained
+        
+        # Reconstruct the Sequential Model Head exactly as trained
         local_model = tf.keras.models.Sequential([
             base_model,
             tf.keras.layers.GlobalAveragePooling2D(),
@@ -83,7 +90,7 @@ def load_detection_model(path):
             tf.keras.layers.Dense(len(CLASS_NAMES), activation='softmax')
         ])
 
-        # 3. Load the Weights into the Reconstructed Architecture
+        # Load the Weights into the Reconstructed Architecture
         local_model.load_weights(path)
         
         # Pre-run a prediction to finalize the graph compilation 
@@ -101,7 +108,9 @@ def load_detection_model(path):
 model = load_detection_model(MODEL_PATH)
 
 
+# ---------------------------------------------------------
 # SUGGESTIONS
+# ---------------------------------------------------------
 SUGGESTION_DICT = {
     "Pepper__bell___Bacterial_spot": "Avoid overhead watering. Use copper-based fungicides. Remove infected leaves.",
     "Pepper__bell___healthy": "Plant is healthy! Maintain regular care.",
@@ -120,36 +129,66 @@ SUGGESTION_DICT = {
     "Tomato_healthy": "Plant is healthy! Continue monitoring."
 }
 
+# ---------------------------------------------------------
+# AI EXPERT CALLBACK FUNCTION
+# ---------------------------------------------------------
+def consult_ai_expert():
+    """Runs the Gemini API call and stores the output in session state."""
+    if not genai_model:
+        st.session_state.ai_response = "AI Expert unavailable — check API key."
+        return
+
+    # Use st.spinner here for visibility during the long-running API call
+    with st.spinner(f"Consulting AI Expert about {st.session_state.prediction}..."):
+        # Prompt modified to request simple bullet points
+        prompt = f"Provide a simple, easy-to-understand 6-point treatment plan for {st.session_state.prediction}. The points should be structured as clear bullet points covering Immediate action, Organic methods, Chemical options, and Prevention steps."
+        try:
+            response = genai_model.generate_content(prompt)
+            # Store response in session state
+            st.session_state.ai_response = response.text
+        except Exception as e:
+            st.session_state.ai_response = f"Gemini Error: {e}"
+
+
+# ---------------------------------------------------------
 # MAIN LOGIC
+# ---------------------------------------------------------
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
     st.session_state.confidence = 0.0
     st.session_state.topk = []
     st.session_state.suggestion = ""
+    st.session_state.ai_response = "" # NEW: Initialize AI response state
 
-# Preprocessing the image
+# Keep this function strictly for model input (224x224)
 def preprocess_image(image_pil):
     image = ImageOps.exif_transpose(image_pil.convert("RGB"))
     image = image.resize((224, 224)) # Model input size
     arr = np.array(image) / 255.0
     return np.expand_dims(arr, axis=0).astype(np.float32)
+
 upload = st.file_uploader("Upload a leaf image...", type=["jpg", "jpeg", "png"])
 
 if upload:
     image_original = Image.open(upload)
+    
+    # Resize the image for display to 224x224.
     image_display = ImageOps.exif_transpose(image_original.convert("RGB")).resize((224, 224))
     
     col1, col2 = st.columns(2)
 
     with col1:
-        st.image(image_display, caption="Uploaded Image (224x224)", use_container_width=True)
+        # Use explicit width=224 for crisp display
+        st.image(image_display, caption="Uploaded Image (224x224)", width=224)
 
         if st.button("🔍 Classify Image"):
+            # Clear previous AI response when running a new classification
+            st.session_state.ai_response = "" 
+            
             if model is None:
                 st.error("Model not loaded. Check path.")
             else:
                 with st.spinner("Analyzing..."):
-                    # Use the original image for processing (which resizes to 224x224)
                     processed = preprocess_image(image_original)
                     preds = model.predict(processed, verbose=0)[0]
                     
@@ -172,14 +211,14 @@ if upload:
             st.warning(f"### 🌿 Recommendation:\n{st.session_state.suggestion}")
             st.divider()
 
-            if st.button(f"🤖 Ask AI Expert about {st.session_state.prediction}", key="ai_expert_button"):
-                if not genai_model:
-                        st.error("AI Expert unavailable — check API key.")
-                else:
-                        with st.spinner("Consulting AI Expert..."):
-                            prompt = f"Provide a simple, easy-to-understand 6-point treatment plan for {st.session_state.prediction}. The points should be structured as clear bullet points covering Immediate action, Organic methods, Chemical options, and Prevention steps."
-                            try:
-                                response = genai_model.generate_content(prompt)
-                                st.info(response.text)
-                            except Exception as e:
-                                st.error(f"Gemini Error: {e}")
+            # Button uses a callback function and only sets state.
+            st.button(
+                f"🤖 Ask AI Expert about {st.session_state.prediction}", 
+                key="ai_expert_button",
+                on_click=consult_ai_expert # Calls the function above
+            )
+            
+            # Display the AI response from session state if it exists.
+            if st.session_state.ai_response:
+                st.write("### 🧠 AI Expert Treatment Plan")
+                st.markdown(st.session_state.ai_response)
