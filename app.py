@@ -5,19 +5,18 @@ from PIL import Image, ImageOps
 import numpy as np
 import google.generativeai as genai
 
-# CRITICAL FIX 1: Set environment variable for Keras compatibility
-# This helps load models trained in older versions of Keras/TensorFlow.
-os.environ["TF_USE_LEGACY_KERAS"] = "1" 
+# MobileNetV2 models trained in older TF versions sometimes need this
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 
 # ---------------------------------------------------------
-# PAGE SETUP
+# Basic app layout
 # ---------------------------------------------------------
 st.set_page_config(page_title="Plant Disease Advisor", page_icon="🌱", layout="wide")
-st.title("🌱 AI-Based Plant Disease Advisor")
-st.write("Upload a plant leaf image to detect disease and get treatment suggestions.")
+st.title("🌱 Plant Disease Detection & Treatment Guide")
+st.write("Upload a plant leaf image to identify the disease and get treatment tips.")
 
 # ---------------------------------------------------------
-# SECURE API KEY HANDLING
+# API Key setup
 # ---------------------------------------------------------
 API_KEY = None
 
@@ -30,196 +29,193 @@ if not API_KEY:
     API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not API_KEY:
-    st.warning("Google Gemini API Key not found. Enter it below:")
-    API_KEY = st.text_input("Enter your Google Gemini API Key:", type="password")
+    st.warning("Gemini API key not found. Enter it below:")
+    API_KEY = st.text_input("Gemini API Key:", type="password")
 
 if API_KEY:
     try:
         genai.configure(api_key=API_KEY)
-    except Exception as e:
-        st.error(f"Invalid API Key: {e}")
+    except:
+        st.error("Invalid API Key.")
         API_KEY = None
 
 # ---------------------------------------------------------
-# CLASS NAMES (Required for model definition)
+# Class labels
 # ---------------------------------------------------------
 CLASS_NAMES = [
-    'Pepper__bell___Bacterial_spot', 'Pepper__bell___healthy', 'Potato___Early_blight', 
-    'Potato___Late_blight', 'Potato___healthy', 'Tomato_Bacterial_spot', 'Tomato_Early_blight', 
-    'Tomato_Late_blight', 'Tomato_Leaf_Mold', 'Tomato_Septoria_leaf_spot', 
-    'Tomato_Spider_mites_Two_spotted_spider_mite', 'Tomato__Target_Spot', 
-    'Tomato__Tomato_YellowLeaf__Curl_Virus', 'Tomato__Tomato_mosaic_virus', 'Tomato_healthy'
+    'Pepper__bell___Bacterial_spot', 'Pepper__bell___healthy',
+    'Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy',
+    'Tomato_Bacterial_spot', 'Tomato_Early_blight', 'Tomato_Late_blight',
+    'Tomato_Leaf_Mold', 'Tomato_Septoria_leaf_spot',
+    'Tomato_Spider_mites_Two_spotted_spider_mite', 'Tomato__Target_Spot',
+    'Tomato__Tomato_YellowLeaf__Curl_Virus', 'Tomato__Tomato_mosaic_virus',
+    'Tomato_healthy'
 ]
 
 # ---------------------------------------------------------
-# LOAD GEMINI MODEL
+# Load Gemini Model
 # ---------------------------------------------------------
 @st.cache_resource
 def load_genai_model():
-    if API_KEY:
-        try:
-            return genai.GenerativeModel("gemini-2.5-flash")
-        except Exception as e:
-            st.error(f"Error loading Gemini model: {e}")
-            return None
-    return None
+    if not API_KEY:
+        return None
+    try:
+        return genai.GenerativeModel("gemini-2.5-flash")
+    except:
+        return None
 
 genai_model = load_genai_model()
 
 # ---------------------------------------------------------
-# LOAD KERAS DETECTION MODEL (Architecture Rebuild Fix)
+# Load detection model
 # ---------------------------------------------------------
 MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
 
 @st.cache_resource
 def load_detection_model(path):
     try:
-        # CRITICAL FIX 3: Rebuild the exact model architecture and load weights only
-        base_model = tf.keras.applications.MobileNetV2(
-            weights=None, 
-            include_top=False, 
+        base = tf.keras.applications.MobileNetV2(
+            weights=None,
+            include_top=False,
             input_shape=(224, 224, 3)
         )
-        
-        # Reconstruct the Sequential Model Head exactly as trained
-        local_model = tf.keras.models.Sequential([
-            base_model,
+
+        model = tf.keras.models.Sequential([
+            base,
             tf.keras.layers.GlobalAveragePooling2D(),
             tf.keras.layers.Dropout(0.3),
             tf.keras.layers.Dense(128, activation='relu'),
             tf.keras.layers.Dense(len(CLASS_NAMES), activation='softmax')
         ])
 
-        # Load the Weights into the Reconstructed Architecture
-        local_model.load_weights(path)
-        
-        # Pre-run a prediction to finalize the graph compilation 
-        dummy_input = np.zeros((1, 224, 224, 3), dtype=np.float32)
-        local_model.predict(dummy_input, verbose=0)
-        
-        st.success("✅ Detection model successfully loaded.")
-        return local_model
+        model.load_weights(path)
+
+        # Warm-up call
+        dummy = np.zeros((1, 224, 224, 3), dtype=np.float32)
+        model.predict(dummy, verbose=0)
+
+        st.success("Model loaded successfully.")
+        return model
 
     except Exception as e:
-        st.error(f"Failed to load detection model: {e}")
-        st.error("Please verify the model file path and the required dependencies.")
+        st.error(f"Model loading failed: {e}")
         return None
-    
+
 model = load_detection_model(MODEL_PATH)
 
-
 # ---------------------------------------------------------
-# SUGGESTIONS
+# Basic suggestions for each disease
 # ---------------------------------------------------------
 SUGGESTION_DICT = {
-    "Pepper__bell___Bacterial_spot": "Avoid overhead watering. Use copper-based fungicides. Remove infected leaves.",
-    "Pepper__bell___healthy": "Plant is healthy! Maintain regular care.",
-    "Potato___Early_blight": "Use copper fungicides. Water at base. Rotate crops.",
-    "Potato___Late_blight": "Remove infected plants immediately. Apply mancozeb or chlorothalonil.",
-    "Potato___healthy": "Plant is healthy! Maintain soil moisture.",
-    "Tomato_Bacterial_spot": "Avoid overhead watering. Use copper sprays.",
-    "Tomato_Early_blight": "Prune lower leaves. Apply chlorothalonil or copper.",
-    "Tomato_Late_blight": "Destroy infected plants. Apply mancozeb proactively.",
+    "Pepper__bell___Bacterial_spot": "Avoid overhead watering. Use copper sprays.",
+    "Pepper__bell___healthy": "Healthy plant. Maintain regular care.",
+    "Potato___Early_blight": "Use copper fungicides. Rotate crops.",
+    "Potato___Late_blight": "Remove infected plants. Use mancozeb.",
+    "Potato___healthy": "Healthy plant. Maintain soil moisture.",
+    "Tomato_Bacterial_spot": "Use copper sprays. Avoid water splashing.",
+    "Tomato_Early_blight": "Prune lower leaves. Use fungicide.",
+    "Tomato_Late_blight": "Remove infected plants. Spray mancozeb.",
     "Tomato_Leaf_Mold": "Reduce humidity. Increase ventilation.",
-    "Tomato_Septoria_leaf_spot": "Remove spotted leaves. Use fungicides.",
-    "Tomato_Spider_mites_Two_spotted_spider_mite": "Spray with neem or insecticidal soap.",
-    "Tomato__Target_Spot": "Improve air circulation. Apply fungicide.",
-    "Tomato__Tomato_YellowLeaf__Curl_Virus": "VIRUS—No cure. Remove plant. Control whiteflies.",
-    "Tomato__Tomato_mosaic_virus": "VIRUS—No cure. Sterilize tools. Remove plants.",
-    "Tomato_healthy": "Plant is healthy! Continue monitoring."
+    "Tomato_Septoria_leaf_spot": "Remove spotted leaves. Apply fungicide.",
+    "Tomato_Spider_mites_Two_spotted_spider_mite": "Use neem oil/soap spray.",
+    "Tomato__Target_Spot": "Improve air flow. Use fungicide.",
+    "Tomato__Tomato_YellowLeaf__Curl_Virus": "No cure. Remove plant. Control whiteflies.",
+    "Tomato__Tomato_mosaic_virus": "No cure. Remove plant. Sterilize tools.",
+    "Tomato_healthy": "Healthy plant. Keep monitoring."
 }
 
 # ---------------------------------------------------------
-# AI EXPERT CALLBACK FUNCTION
+# Gemini Expert Treatment Plan
 # ---------------------------------------------------------
 def consult_ai_expert():
-    """Runs the Gemini API call and stores the output in session state."""
     if not genai_model:
-        st.session_state.ai_response = "AI Expert unavailable — check API key."
+        st.session_state.ai_response = "AI Expert unavailable."
         return
 
-    # Use st.spinner here for visibility during the long-running API call
-    with st.spinner(f"Consulting AI Expert about {st.session_state.prediction}..."):
-        # Prompt modified to request simple bullet points
-        prompt = f"Provide a simple, easy-to-understand 6-point treatment plan for {st.session_state.prediction}. The points should be structured as clear bullet points covering Immediate action, Organic methods, Chemical options, and Prevention steps."
+    with st.spinner("Preparing treatment plan..."):
+        prompt = f"""
+Give a very short 6-bullet treatment plan for the disease: {st.session_state.prediction}.
+Use ONLY bullet points.
+Each point must be maximum 1 line.
+Cover:
+1. Immediate Action
+2. Organic Method
+3. Chemical Option
+4. Prevention Step
+5. Do's
+6. Don’ts
+"""
+
         try:
             response = genai_model.generate_content(prompt)
-            # Store response in session state
             st.session_state.ai_response = response.text
         except Exception as e:
             st.session_state.ai_response = f"Gemini Error: {e}"
 
-
 # ---------------------------------------------------------
-# MAIN LOGIC
+# Session State Setup
 # ---------------------------------------------------------
-# Initialize all session state variables safely
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
     st.session_state.confidence = 0.0
     st.session_state.topk = []
     st.session_state.suggestion = ""
-    st.session_state.ai_response = "" 
+    st.session_state.ai_response = ""
 
-# Keep this function strictly for model input (224x224)
-def preprocess_image(image_pil):
-    image = ImageOps.exif_transpose(image_pil.convert("RGB"))
-    image = image.resize((224, 224)) # Model input size
-    arr = np.array(image) / 255.0
+# ---------------------------------------------------------
+# Image Preprocessing for Model
+# ---------------------------------------------------------
+def preprocess_image(img):
+    img = ImageOps.exif_transpose(img.convert("RGB"))
+    img = img.resize((224, 224))
+    arr = np.array(img) / 255.0
     return np.expand_dims(arr, axis=0).astype(np.float32)
 
+# ---------------------------------------------------------
+# File Upload and Processing
+# ---------------------------------------------------------
 upload = st.file_uploader("Upload a leaf image...", type=["jpg", "jpeg", "png"])
 
 if upload:
     image_original = Image.open(upload)
-    
-    # Resize the image for display to 224x224.
-    image_display = ImageOps.exif_transpose(image_original.convert("RGB")).resize((224, 224))
-    
-    col1, col2 = st.columns(2)
 
-    with col1:
-        # Use explicit width=224 for crisp display
-        st.image(image_display, caption="Uploaded Image (224x224)", width=224)
+    # Show full-resolution image (avoids blur)
+    st.image(image_original, caption="Uploaded Image", use_column_width=True)
 
-        if st.button("🔍 Classify Image"):
-            # Clear previous AI response when running a new classification
-            st.session_state.ai_response = "" 
-            
-            if model is None:
-                st.error("Model not loaded. Check path.")
-            else:
-                with st.spinner("Analyzing..."):
-                    processed = preprocess_image(image_original)
-                    preds = model.predict(processed, verbose=0)[0]
-                    
-                    idxs = preds.argsort()[-3:][::-1]
-                    st.session_state.topk = [(CLASS_NAMES[i], float(preds[i]) * 100) for i in idxs]
-                    best = idxs[0]
-                    st.session_state.prediction = CLASS_NAMES[best]
-                    st.session_state.confidence = preds[best] * 100
-                    st.session_state.suggestion = SUGGESTION_DICT.get(CLASS_NAMES[best], "No suggestion available.")
+    if st.button("🔍 Classify Image"):
+        st.session_state.ai_response = ""
 
-    with col2:
-        if st.session_state.prediction:
-            st.success(f"**Prediction:** {st.session_state.prediction}")
-            st.info(f"**Confidence:** {st.session_state.confidence:.2f}%")
-            
-            st.write("### 🔎 Top Predictions")
-            for name, conf in st.session_state.topk:
-                st.write(f"- {name} — {conf:.2f}%")
-            
-            st.warning(f"### 🌿 Recommendation:\n{st.session_state.suggestion}")
-            st.divider()
+        if model is None:
+            st.error("Model not loaded.")
+        else:
+            with st.spinner("Analyzing..."):
+                processed = preprocess_image(image_original)
+                preds = model.predict(processed, verbose=0)[0]
 
-            # Button uses a callback function and only sets state.
-            st.button(
-                f"🤖 Ask AI Expert about {st.session_state.prediction}", 
-                key="ai_expert_button",
-                on_click=consult_ai_expert # Calls the function above
-            )
-            
-            # FIX: Safely check for the existence of the key AND content before displaying.
-            if 'ai_response' in st.session_state and st.session_state.ai_response:
-                st.write("### 🧠 AI Expert Treatment Plan")
-                st.markdown(st.session_state.ai_response)
+                idxs = preds.argsort()[-3:][::-1]
+                st.session_state.topk = [(CLASS_NAMES[i], float(preds[i])*100) for i in idxs]
+
+                best_idx = idxs[0]
+                st.session_state.prediction = CLASS_NAMES[best_idx]
+                st.session_state.confidence = preds[best_idx]*100
+                st.session_state.suggestion = SUGGESTION_DICT.get(CLASS_NAMES[best_idx], "No suggestion available.")
+
+    if st.session_state.prediction:
+        st.success(f"Prediction: {st.session_state.prediction}")
+        st.info(f"Confidence: {st.session_state.confidence:.2f}%")
+
+        st.write("### Top Predictions")
+        for name, conf in st.session_state.topk:
+            st.write(f"- {name} — {conf:.2f}%")
+
+        st.warning(f"### Quick Suggestion\n{st.session_state.suggestion}")
+        st.divider()
+
+        st.button(
+            f"🤖 Get Detailed Treatment for {st.session_state.prediction}",
+            on_click=consult_ai_expert
+        )
+
+        if st.session_state.ai_response:
+            st.write("### 🧠 AI Treatment Plan")
+            st.markdown(st.session_state.ai_response)
