@@ -123,19 +123,15 @@ def consult_ai_expert():
 
     with st.spinner("Preparing treatment plan..."):
         prompt = f"""
-Give a short 6-bullet treatment plan for: {st.session_state.prediction}.
-Rules:
-- Only bullet points
-- Max 1–2 lines per point
-- No paragraphs
-Include:
-1. Immediate action
-2. Organic method
-3. Chemical method
-4. Prevention tip
-5. Do's
-6. Don'ts
-"""
+                          Give a short bullet-point treatment guide for {st.session_state.prediction}.
+                          Rules:
+                           - Only bullet points
+                           - Max 6 - 7 bullets
+                           - Each bullet under 8 words
+                           - Give words in simple language
+                           - Include: immediate fix, organic remedy, chemical remedy, prevention, do's and don'ts
+                           -Give what is the that tip about (e.g., immediate fix, organic remedy, chemical remedy, prevention, do's and don'ts) at the start of each bullet point 
+                         """
 
         try:
             response = genai_model.generate_content(prompt)
@@ -212,6 +208,5 @@ if upload:
             if st.session_state.ai_response:
                 st.write("### 🧠 AI Treatment Plan")
                 st.markdown(st.session_state.ai_response)
-
 
 
