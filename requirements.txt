@@ -1,11 +1,12 @@
 streamlit
-tensorflow==2.16.1
+tensorflow
 numpy
 pillow
 google-generativeai
 scikit-learn
 matplotlib
 seaborn
+
 
 
 
