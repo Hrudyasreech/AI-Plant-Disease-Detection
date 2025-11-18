@@ -153,12 +153,13 @@ def consult_ai_expert():
 # ---------------------------------------------------------
 # MAIN LOGIC
 # ---------------------------------------------------------
+# Initialize all session state variables safely
 if "prediction" not in st.session_state:
     st.session_state.prediction = None
     st.session_state.confidence = 0.0
     st.session_state.topk = []
     st.session_state.suggestion = ""
-    st.session_state.ai_response = "" # NEW: Initialize AI response state
+    st.session_state.ai_response = "" 
 
 # Keep this function strictly for model input (224x224)
 def preprocess_image(image_pil):
@@ -218,7 +219,7 @@ if upload:
                 on_click=consult_ai_expert # Calls the function above
             )
             
-            # Display the AI response from session state if it exists.
-            if st.session_state.ai_response:
+            # FIX: Safely check for the existence of the key AND content before displaying.
+            if 'ai_response' in st.session_state and st.session_state.ai_response:
                 st.write("### 🧠 AI Expert Treatment Plan")
                 st.markdown(st.session_state.ai_response)
