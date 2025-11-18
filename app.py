@@ -1,11 +1,11 @@
 import os
-os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import streamlit as st
 import tensorflow as tf
 from PIL import Image, ImageOps
 import numpy as np
 import google.generativeai as genai
-import os
+
+os.environ["TF_USE_LEGACY_KERAS"] = "1" 
 
 # ---------------------------------------------------------
 # PAGE SETUP
@@ -39,53 +39,7 @@ if API_KEY:
         API_KEY = None
 
 # ---------------------------------------------------------
-# LOAD MODELS
-# ---------------------------------------------------------
-@st.cache_resource
-def load_genai_model():
-    if API_KEY:
-        try:
-            return genai.GenerativeModel("gemini-2.5-flash")
-        except Exception as e:
-            st.error(f"Error loading Gemini model: {e}")
-            return None
-    return None
-
-genai_model = load_genai_model()
-
-MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
-
-@st.cache_resource
-def load_detection_model(path):
-    try:
-        # 1. Build the Empty Architecture (MobileNetV2 + Your Layers)
-        base_model = tf.keras.applications.MobileNetV2(
-            weights='imagenet', 
-            include_top=False, 
-            input_shape=(224, 224, 3)
-        )
-        
-        local_model = tf.keras.models.Sequential([
-            base_model,
-            tf.keras.layers.GlobalAveragePooling2D(),
-            tf.keras.layers.Dropout(0.3),
-            tf.keras.layers.Dense(128, activation='relu'),
-            tf.keras.layers.Dense(15, activation='softmax') # 15 Classes
-        ])
-
-        # 2. Load the Weights into the Architecture
-        local_model.load_weights(path)
-        print("✅ Model weights loaded successfully!")
-        return local_model
-
-    except Exception as e:
-        st.error(f"Error loading model: {e}")
-        return None
-    
-model = load_detection_model(MODEL_PATH)
-
-# ---------------------------------------------------------
-# CLASS NAMES
+# CLASS NAMES (Required for model definition)
 # ---------------------------------------------------------
 CLASS_NAMES = [
     'Pepper__bell___Bacterial_spot', 'Pepper__bell___healthy', 'Potato___Early_blight', 
@@ -94,6 +48,67 @@ CLASS_NAMES = [
     'Tomato_Spider_mites_Two_spotted_spider_mite', 'Tomato__Target_Spot', 
     'Tomato__Tomato_YellowLeaf__Curl_Virus', 'Tomato__Tomato_mosaic_virus', 'Tomato_healthy'
 ]
+
+# ---------------------------------------------------------
+# LOAD GEMINI MODEL
+# ---------------------------------------------------------
+@st.cache_resource
+def load_genai_model():
+    if API_KEY:
+        try:
+            # FIX 2: Updated to the current stable model name
+            return genai.GenerativeModel("gemini-2.5-flash")
+        except Exception as e:
+            st.error(f"Error loading Gemini model: {e}")
+            return None
+    return None
+
+genai_model = load_genai_model()
+
+# ---------------------------------------------------------
+# LOAD KERAS DETECTION MODEL (Architecture Rebuild Fix)
+# ---------------------------------------------------------
+MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
+
+@st.cache_resource
+def load_detection_model(path):
+    try:
+        # CRITICAL FIX 3: Rebuild the exact model architecture and load weights only
+        
+        # 1. Base Model Definition (MobileNetV2, weights=None to load from file)
+        base_model = tf.keras.applications.MobileNetV2(
+            weights=None, 
+            include_top=False, 
+            input_shape=(224, 224, 3)
+        )
+        
+        # 2. Reconstruct the Sequential Model Head exactly as trained
+        local_model = tf.keras.models.Sequential([
+            base_model,
+            tf.keras.layers.GlobalAveragePooling2D(),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(128, activation='relu'),
+            tf.keras.layers.Dense(len(CLASS_NAMES), activation='softmax')
+        ])
+
+        # 3. Load the Weights into the Reconstructed Architecture
+        local_model.load_weights(path)
+        
+        # Pre-run a prediction to finalize the graph compilation 
+        dummy_input = np.zeros((1, 224, 224, 3), dtype=np.float32)
+        local_model.predict(dummy_input, verbose=0)
+        
+        st.success("✅ Detection model successfully loaded.")
+        return local_model
+
+    except Exception as e:
+        # This will now catch errors in the build or load_weights phase
+        st.error(f"Failed to load detection model: {e}")
+        st.error("Please verify the model file path and the required dependencies.")
+        return None
+    
+model = load_detection_model(MODEL_PATH)
+
 
 # ---------------------------------------------------------
 # SUGGESTIONS
@@ -125,29 +140,35 @@ if "prediction" not in st.session_state:
     st.session_state.topk = []
     st.session_state.suggestion = ""
 
+# Keep this function strictly for model input (224x224)
 def preprocess_image(image_pil):
     image = ImageOps.exif_transpose(image_pil.convert("RGB"))
-    image = image.resize((224, 224))
+    image = image.resize((224, 224)) # Model input size
     arr = np.array(image) / 255.0
     return np.expand_dims(arr, axis=0).astype(np.float32)
 
 upload = st.file_uploader("Upload a leaf image...", type=["jpg", "jpeg", "png"])
 
 if upload:
-    image = Image.open(upload)
+    image_original = Image.open(upload)
+    
+    # NEW: Create a 512x512 image for display only
+    image_display = ImageOps.exif_transpose(image_original.convert("RGB")).resize((512, 512))
+    
     col1, col2 = st.columns(2)
 
     with col1:
-        # Fixed the width parameter here
-        st.image(image, caption="Uploaded Image", use_container_width=True)
+        st.image(image_display, caption="Uploaded Image (512x512)", use_container_width=True)
 
         if st.button("🔍 Classify Image"):
             if model is None:
                 st.error("Model not loaded. Check path.")
             else:
                 with st.spinner("Analyzing..."):
-                    processed = preprocess_image(image)
+                    # Use the original image for processing (which resizes to 224x224)
+                    processed = preprocess_image(image_original)
                     preds = model.predict(processed, verbose=0)[0]
+                    
                     idxs = preds.argsort()[-3:][::-1]
                     st.session_state.topk = [(CLASS_NAMES[i], float(preds[i]) * 100) for i in idxs]
                     best = idxs[0]
@@ -167,18 +188,15 @@ if upload:
             st.warning(f"### 🌿 Recommendation:\n{st.session_state.suggestion}")
             st.divider()
 
-        if st.button(f"🤖 Ask AI Expert about {st.session_state.prediction}"):
-            if not genai_model:
-                    st.error("AI Expert unavailable — check API key.")
-            else:
-                    with st.spinner("Consulting AI Expert..."):
-                        prompt = f"Give a short 6-bullet treatment guide for {st.session_state.prediction} (Immediate/Organic/Chemical/Prevention)."
-                        try:
-                            response = genai_model.generate_content(prompt)
-                            st.info(response.text)
-                        except Exception as e:
-                            st.error(f"Gemini Error: {e}")
-
-
-
-
+            # FIX 4: This button now only appears after a prediction is made
+            if st.button(f"🤖 Ask AI Expert about {st.session_state.prediction}", key="ai_expert_button"):
+                if not genai_model:
+                        st.error("AI Expert unavailable — check API key.")
+                else:
+                        with st.spinner("Consulting AI Expert..."):
+                            prompt = f"Give a short 6-bullet treatment guide for {st.session_state.prediction} (Immediate/Organic/Chemical/Prevention)."
+                            try:
+                                response = genai_model.generate_content(prompt)
+                                st.info(response.text)
+                            except Exception as e:
+                                st.error(f"Gemini Error: {e}")
