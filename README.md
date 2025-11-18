@@ -24,7 +24,7 @@ About the Dataset:
 4. Suitable for CNN-based image classification and transfer learning tasks.
 
 *LIVE DEMO*
-Click here to try the app instantly: [PASTE YOUR STREAMLIT APP LINK HERE]
+Click here to try the app instantly: (https://ai-plant-disease-detection-hs.streamlit.app/)
 (Note: If you run the app locally, you will need to provide your own Gemini API Key. The live demo has this configured.)
 
 *Key Features*:
