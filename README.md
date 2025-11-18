@@ -1,54 +1,111 @@
-# AI-Plant-Disease-Detection
-AI-Based Smart Plant Health Advisor for Sustainable Agriculture | CNN using MobileNetV2
+# AI Plant Disease Detection
+### _Deep Learning-based Smart Plant Health Advisor using MobileNetV2_
 
-Problem Statement :
-Crop diseases are a major cause of reduced agricultural productivity worldwide. Farmers often lack quick, reliable, and affordable tools for early detection of plant diseases, which leads to delayed treatment and lower yields. Manual inspection is time-consuming and inaccurate, especially in large farms.
+---
 
-To address this, an AI-powered system is proposed to automatically identify plant diseases from leaf images and provide suitable treatment suggestions — contributing to sustainable farming practices.
+## 1. Problem Statement
+Crop diseases significantly reduce agricultural productivity, especially in areas lacking access to early detection tools. Manual inspection is slow, subjective, and often inaccurate.
 
-Proposed Solution :
-The proposed system uses a Convolutional Neural Network (CNN) architecture, specifically MobileNetV2, to classify leaf images into healthy or diseased categories.
-After detection, the system can also display the possible cause and recommended treatment (based on the disease class).
-Later stages may include:
-1. Real-time detection using OpenCV and a camera feed.
-2. A dashboard interface for farmers to upload images and get instant feedback.
+This project proposes an **AI-powered system** that detects plant diseases from leaf images and provides treatment recommendations — supporting **sustainable, scalable agriculture**.
 
-Dataset Used:
-Name: PlantVillage Dataset
-Source: Kaggle (Link : https://www.kaggle.com/datasets/emmarex/plantdisease )
+---
 
-About the Dataset:
-1. Contains over 50,000 labeled images of healthy and diseased plant leaves.
-2. Covers 14 crops and 38 different classes of diseases.
-3. Each image is a close-up of a single leaf in .jpg format.
-4. Suitable for CNN-based image classification and transfer learning tasks.
+## 2. Proposed Solution
+A **Convolutional Neural Network (CNN)** based on **MobileNetV2 (Transfer Learning)** is used to classify plant leaf images into healthy/diseased categories.
 
-*LIVE DEMO*
-Click here to try the app instantly: (https://ai-plant-disease-detection-hs.streamlit.app/)
-(Note: If you run the app locally, you will need to provide your own Gemini API Key. The live demo has this configured.)
+**Future extensions include:**
+- Real-time detection using OpenCV  
+- Farmer dashboard for uploading images  
+- Mobile app integration
 
-*Key Features*:
-1. Accurate Detection: Uses a MobileNetV2 CNN model trained on the PlantVillage dataset (54,000+ images).
-2. 15 Disease Classes: Can identify diseases in Potato, Tomato, and Pepper plants.
-3. Expert Advice: Integrated with Google Gemini AI to provide detailed, step-by-step treatment plans (Organic & Chemical).
-4. User-Friendly Interface: A simple, responsive web app built with Streamlit.
+---
 
-*Technical Details*: 
-1. Model Architecture: MobileNetV2 (Transfer Learning) + Fine-Tuning.
-2. Training Accuracy: ~89% - 92%.
-3. Tech Stack: TensorFlow/Keras, Streamlit, Google Gemini API, Python.
+## 3. Dataset
+**PlantVillage Dataset**  
+Source: Kaggle  
+Link: https://www.kaggle.com/datasets/emmarex/plantdisease
 
-How to Run Locally ?
+**Dataset Highlights:**
+- 50,000+ images  
+- 14 crops, 38 disease classes  
+- High-quality leaf images  
+- Well-suited for CNN & transfer learning
 
-If you want to run the code on your own machine instead of using the Live Demo:
-1. Clone or Download this repository.
-2. Install Dependencies:
-   -> pip install -r requirements.txt
-3. Run the App:
-   -> streamlit run app.py
-4. Enter API Key: When the app opens, enter your Google Gemini API Key in the sidebar to enable the AI advice feature.
+---
 
-Project Structure:
-1. app.py: The main source code for the Streamlit web application.
-2. Plant_Disease_Project_Report.ipynb: A complete report notebook showing the model training process, evaluation metrics, and confusion matrices.
-3. models/: Contains the trained .h5 model files.
+## 4. Key Features
+- **Accurate Classification:** MobileNetV2 with fine-tuning  
+- **Multi-class Support:** 15+ disease categories (Tomato, Potato, Pepper, etc.)  
+- **Expert Treatment Advice:** (Optional) Gemini integration  
+- **Clean, Simple Streamlit UI**  
+- **Lightweight Model:** Suitable for mobile/edge deployment
+
+---
+
+## 5. Technical Results
+| Metric | Score |
+|--------|-------:|
+| Training Accuracy | ~89–92% |
+| Validation Accuracy | ~88–90% |
+| Loss | ~0.28–0.32 |
+
+> These results may vary depending on training epochs, augmentation, and fine-tuning depth.
+
+---
+
+## 6. Model Architecture
+- **Base Model:** MobileNetV2 (pre-trained on ImageNet)  
+- **include_top:** False  
+- **Input Shape:** (224, 224, 3)  
+- **Custom Layers:** GlobalAveragePooling2D → Dense (ReLU) → Dropout → Dense (Softmax)
+
+---
+
+## 7. How to Run Locally
+**Step 1 — Clone the repository**
+```bash
+git clone <your-repo-link>
+cd AI-Plant-Disease-Detection
+```
+
+**Step 2 — Install Dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+**Step 3 — Run Streamlit App**
+```bash
+streamlit run app.py
+```
+
+If using Gemini API for treatment suggestions, enter your API key in the sidebar.
+
+---
+
+## 8. Live Demo
+(Replace this with your deployed Streamlit link)
+
+👉 **[https://ai-plant-disease-detection-hs.streamlit.app/](#)**
+
+---
+
+## 9. Project Structure
+```
+AI-Plant-Disease-Detection/
+├── app.py                      # Streamlit Web App
+├── PDD_Final.ipynb             # Full model training notebook
+├── models/                     # Saved .h5 models
+├── requirements.txt            # Dependencies
+└── README.md                   # Project documentation
+```
+
+---
+
+## 10. Future Improvements
+- Optimize model for mobile devices  
+- Deploy on AWS/GCP  
+- Add Grad-CAM for interpretability  
+- Expand to more crop species  
+- Build multilingual farmer interface
+
+
