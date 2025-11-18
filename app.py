@@ -59,7 +59,33 @@ MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
 @st.cache_resource
 def load_detection_model(path):
     try:
-        return tf.keras.models.load_model(path, compile=False)
+        # Copy and paste this ENTIRE function over your old one
+@st.cache_resource
+def load_detection_model(path):
+    try:
+        # 1. Build the Empty Architecture (MobileNetV2 + Your Layers)
+        base_model = tf.keras.applications.MobileNetV2(
+            weights='imagenet', 
+            include_top=False, 
+            input_shape=(224, 224, 3)
+        )
+        
+        local_model = tf.keras.models.Sequential([
+            base_model,
+            tf.keras.layers.GlobalAveragePooling2D(),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(128, activation='relu'),
+            tf.keras.layers.Dense(15, activation='softmax') # 15 Classes
+        ])
+
+        # 2. Load the Weights into the Architecture
+        local_model.load_weights(path)
+        print("✅ Model weights loaded successfully!")
+        return local_model
+
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None
     except Exception as e:
         st.error(f"Failed to load detection model: {e}")
         return None
@@ -160,5 +186,6 @@ if upload:
                             st.info(response.text)
                         except Exception as e:
                             st.error(f"Gemini Error: {e}")
+
 
 
