@@ -23,7 +23,7 @@ About the Dataset:
 3. Each image is a close-up of a single leaf in .jpg format.
 4. Suitable for CNN-based image classification and transfer learning tasks.
 
-**LIVE DEMO **
+**LIVE DEMO**
 Click here to try the app instantly: [PASTE YOUR STREAMLIT APP LINK HERE]
 (Note: If you run the app locally, you will need to provide your own Gemini API Key. The live demo has this configured.)
 
@@ -34,7 +34,23 @@ Click here to try the app instantly: [PASTE YOUR STREAMLIT APP LINK HERE]
 4. User-Friendly Interface: A simple, responsive web app built with Streamlit.
 
 **Technical Details**: 
-=> Model Architecture: MobileNetV2 (Transfer Learning) + Fine-Tuning.
-=> Training Accuracy: ~89% - 92%.
-=> Tech Stack: TensorFlow/Keras, Streamlit, Google Gemini API, Python.
+1. Model Architecture: MobileNetV2 (Transfer Learning) + Fine-Tuning.
+2. Training Accuracy: ~89% - 92%.
+3. Tech Stack: TensorFlow/Keras, Streamlit, Google Gemini API, Python.
+
+How to Run Locally ?
+
+If you want to run the code on your own machine instead of using the Live Demo:
+1. Clone or Download this repository.
+2. Install Dependencies:
+   -> pip install -r requirements.txt
+3. Run the App:
+   -> streamlit run app.py
+4. Enter API Key: When the app opens, enter your Google Gemini API Key in the sidebar to enable the AI advice feature.
+
+Project Structure:
+1. app.py: The main source code for the Streamlit web application.
+2. Plant_Disease_Project_Report.ipynb: A complete report notebook showing the model training process, evaluation metrics, and confusion matrices.
+3. models/: Contains the trained .h5 model files.
+4. requirements.txt: List of Python libraries required.
 
