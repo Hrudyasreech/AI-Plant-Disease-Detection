@@ -52,13 +52,11 @@ def load_genai_model():
 
 genai_model = load_genai_model()
 
-MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.h5"
+MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
 
 @st.cache_resource
 def load_detection_model(path):
     try:
-        # --- THE FIX IS HERE: compile=False ---
-        # This skips the optimizer loading that was causing your crash
         return tf.keras.models.load_model(path, compile=False)
     except Exception as e:
         st.error(f"Failed to load detection model: {e}")
@@ -160,3 +158,4 @@ if upload:
                             st.info(response.text)
                         except Exception as e:
                             st.error(f"Gemini Error: {e}")
+
