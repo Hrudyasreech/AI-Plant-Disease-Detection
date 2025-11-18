@@ -6,6 +6,8 @@ google-generativeai
 scikit-learn
 matplotlib
 seaborn
+tf-keras
+
 
 
 
