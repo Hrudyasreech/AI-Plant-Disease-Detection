@@ -10,16 +10,32 @@ Proposed Solution :
 The proposed system uses a Convolutional Neural Network (CNN) architecture, specifically MobileNetV2, to classify leaf images into healthy or diseased categories.
 After detection, the system can also display the possible cause and recommended treatment (based on the disease class).
 Later stages may include:
-1.Real-time detection using OpenCV and a camera feed.
-2.A dashboard interface for farmers to upload images and get instant feedback.
+1. Real-time detection using OpenCV and a camera feed.
+2. A dashboard interface for farmers to upload images and get instant feedback.
 
 Dataset Used:
 Name: PlantVillage Dataset
 Source: Kaggle (Link : https://www.kaggle.com/datasets/emmarex/plantdisease )
 
 About the Dataset:
-1.Contains over 50,000 labeled images of healthy and diseased plant leaves.
-2.Covers 14 crops and 38 different classes of diseases.
-3.Each image is a close-up of a single leaf in .jpg format.
-4.Suitable for CNN-based image classification and transfer learning tasks.
+1. Contains over 50,000 labeled images of healthy and diseased plant leaves.
+2. Covers 14 crops and 38 different classes of diseases.
+3. Each image is a close-up of a single leaf in .jpg format.
+4. Suitable for CNN-based image classification and transfer learning tasks.
+
+LIVE DEMO :
+Click here to try the app instantly: [PASTE YOUR STREAMLIT APP LINK HERE]
+(Note: If you run the app locally, you will need to provide your own Gemini API Key. The live demo has this configured.)
+
+Key Features:
+1. Accurate Detection: Uses a MobileNetV2 CNN model trained on the PlantVillage dataset (54,000+ images).
+2. 15 Disease Classes: Can identify diseases in Potato, Tomato, and Pepper plants.
+3. Expert Advice: Integrated with Google Gemini AI to provide detailed, step-by-step treatment plans (Organic & Chemical).
+4. User-Friendly Interface: A simple, responsive web app built with Streamlit.
+
+Technical Details :
+Model Architecture: MobileNetV2 (Transfer Learning) + Fine-Tuning.
+Training Accuracy: ~89% - 92%.
+Dataset: PlantVillage Dataset (link: )
+Tech Stack: TensorFlow/Keras, Streamlit, Google Gemini API, Python.
 
