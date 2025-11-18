@@ -172,7 +172,7 @@ if upload:
     # ---------------- Left Column (Fake Sticky) ----------------
     with col1:
         st.markdown("<div class='left-box'>", unsafe_allow_html=True)
-        fixed_display = ImageOps.exif_transpose(image_original).resize((256, 256))
+        fixed_display = ImageOps.exif_transpose(image_original).resize((512, 256))
         st.image(fixed_display, caption="Uploaded Image (256×256)", width=256)
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -212,3 +212,4 @@ if upload:
             if st.session_state.ai_response:
                 st.write("### 🧠 AI Treatment Plan")
                 st.markdown(st.session_state.ai_response)
+
