@@ -45,8 +45,7 @@ if API_KEY:
 def load_genai_model():
     if API_KEY:
         try:
-            # Use the stable 1.5 model (2.5 is not yet standard)
-            return genai.GenerativeModel("gemini-1.5-flash")
+            return genai.GenerativeModel("gemini-2.5-flash")
         except Exception as e:
             st.error(f"Error loading Gemini model: {e}")
             return None
@@ -179,6 +178,7 @@ if upload:
                             st.info(response.text)
                         except Exception as e:
                             st.error(f"Gemini Error: {e}")
+
 
 
 
