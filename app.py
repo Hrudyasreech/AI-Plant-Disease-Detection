@@ -1,3 +1,5 @@
+import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
 import streamlit as st
 import tensorflow as tf
 from PIL import Image, ImageOps
@@ -158,4 +160,5 @@ if upload:
                             st.info(response.text)
                         except Exception as e:
                             st.error(f"Gemini Error: {e}")
+
 
