@@ -59,10 +59,6 @@ MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
 @st.cache_resource
 def load_detection_model(path):
     try:
-        # Copy and paste this ENTIRE function over your old one
-@st.cache_resource
-def load_detection_model(path):
-    try:
         # 1. Build the Empty Architecture (MobileNetV2 + Your Layers)
         base_model = tf.keras.applications.MobileNetV2(
             weights='imagenet', 
@@ -86,10 +82,7 @@ def load_detection_model(path):
     except Exception as e:
         st.error(f"Error loading model: {e}")
         return None
-    except Exception as e:
-        st.error(f"Failed to load detection model: {e}")
-        return None
-
+    
 model = load_detection_model(MODEL_PATH)
 
 # ---------------------------------------------------------
