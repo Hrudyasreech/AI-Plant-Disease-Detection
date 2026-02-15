@@ -84,7 +84,7 @@ If using Gemini API for treatment suggestions, enter your API key in the sidebar
 
 ## 8. Live Demo
 
-👉 **[https://ai-plant-disease-detection-hs.streamlit.app/](#)**
+👉 **[https://ai-plant-disease-detection-hs.streamlit.app/]**
 
 ---
 
