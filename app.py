@@ -70,7 +70,7 @@ MODEL_PATH = "models/Finetuned_Plant_Disease_Detector.keras"
 def load_detection_model(path):
     try:
         base = tf.keras.applications.MobileNetV2(
-            weights=None,
+            weights='imagenet',
             include_top=False,
             input_shape=(224, 224, 3)
         )
@@ -208,6 +208,7 @@ if upload:
             if st.session_state.ai_response:
                 st.write("### 🧠 AI Treatment Plan")
                 st.markdown(st.session_state.ai_response)
+
 
 
 
